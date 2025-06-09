@@ -18,10 +18,6 @@
 
 # Raw data
 raw_data/
-<<<<<<< HEAD
-*.DS_Store
-*.python-version
-=======
 *.csv
 *.sqlite
 *.zip
@@ -49,4 +45,3 @@ secrets.toml
 
 # User defined extras
 # Complete to your desire
->>>>>>> master
