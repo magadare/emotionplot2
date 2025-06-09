@@ -1,8 +1,3 @@
 raw_data/
-<<<<<<< HEAD
 *.DS_Store
 *.python-version
-=======
-+.DS_Store
-+.python-version
->>>>>>> 9ea897361c85c70af74ab47d394c0e8b8a911556
