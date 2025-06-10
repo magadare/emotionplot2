@@ -2,37 +2,37 @@ import pandas as pd
 import nltk
 from nltk.tokenize import sent_tokenize
 
-def preprocessing(text):
+def preprocessing(content):
     # Lowercase
-    text = text.lower()
+    content = content.lower()
 
     # Remove numbers
-    text = ''.join([char for char in text if not char.isdigit()])
+    content = ''.join([char for char in content if not char.isdigit()])
 
     # Remove punctuation
     punctuation = ['!','"','#','$','%','&','(',')',
-                   '*','+','-','/',':',';','<', 
-                   '=','>','@',"\\",'"]"','^','_']     
-    
+                   '*','+','-','/',':',';','<',
+                   '=','>','@',"\\",'"]"','^','_']
+
 
     for punct in punctuation:
-        text = text.replace(punct, ' ')
+        content = content.replace(punct, ' ')
 
     # Tokenize (split into words)
-    tokens = text.split()
+    tokens = content.split()
 
     return ' '.join(tokens)
 
 
-def chunk_by_sentences(text, sentences_per_chunk=10):
-    sentences = sent_tokenize(text)
+def chunk_by_sentences(content, sentences_per_chunk=10):
+    sentences = sent_tokenize(content)
     chunks = []
 
     for i in range(0, len(sentences), sentences_per_chunk):
         chunk = sentences[i:i+sentences_per_chunk]
         chunks.append(" ".join(chunk))
-
-    return chunks
+    df = pd.DataFrame({'chunk': chunks})
+    return df
 
 # chunks = chunk_by_sentences(data, sentences_per_chunk=10)
 
