@@ -1,9 +1,34 @@
 # data science
 numpy<2.0.0
 pandas==2.2.3
+scikit-learn==1.6.1 # Uncomment if you use sklearn
 
-# Uncomment if you use sklearn
-scikit-learn==1.6.1
+# API
+fastapi
+uvicorn
+
+# plotting
+matplotlib
+seaborn
+
+# validation & env
+pydantic
+python-dotenv
+
+#testing
+pytest
+
+# NLP
+nltk
+
+# deep learning
+torch                 # PyTorch for deep learning
+transformers          # HuggingFace Transformers
+
+# web scraping
+beautifulsoup4        # HTML parsing
+requests
+
 
 # Install the correct TensorFlow version
 # Uncomment if you use TensorFlow
@@ -13,7 +38,3 @@ scikit-learn==1.6.1
 # Google Cloud
 # Uncomment if you use Google Cloud Storage
 # google-cloud-storage
-
-# API
-fastapi
-uvicorn

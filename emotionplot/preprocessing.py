@@ -24,7 +24,7 @@ def preprocessing(content):
     return ' '.join(tokens)
 
 
-def chunk_by_sentences(content, sentences_per_chunk=10):
+def chunk_by_sentences(content, sentences_per_chunk=3):
     sentences = sent_tokenize(content)
     chunks = []
 

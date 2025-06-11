@@ -4,22 +4,34 @@ import re
 
 def get_novel(url: str) -> str:
     """
-    Fetches the text of a novel from Project Gutenberg.
+    Fetches the raw text of a novel from Project Gutenberg.
+    Automatically handles conversion from HTML URL to raw .txt format.
 
     Args:
-        url (str): The URL of the novel on Project Gutenberg.
+        url (str): The Project Gutenberg URL (HTML or .txt).
 
     Returns:
-        str: The cleaned text of the novel.
+        str: The raw text of the novel.
     """
+    # Convert HTML-style Gutenberg book URL to raw .txt format
+    if "gutenberg.org/ebooks/" in url:
+        book_id = url.rstrip("/").split("/")[-1]
+        url = f"https://www.gutenberg.org/cache/epub/{book_id}/pg{book_id}.txt"
+
+    # Fetch the content
     resp = requests.get(url)
-    soup = BeautifulSoup(resp.content, "html.parser")
+    resp.raise_for_status()  # Raise an error if the request failed
 
-    # Extract plain text from the BeautifulSoup object
-    raw_text = soup.get_text()
+    # Handle content type
+    content_type = resp.headers.get("Content-Type", "")
+    if "html" in content_type:
+        soup = BeautifulSoup(resp.content, "html.parser")
+        raw_text = soup.get_text()
+    else:
+        raw_text = resp.text
 
-    # Clean the Gutenberg text
     return raw_text
+
 
 
 
