@@ -2,6 +2,8 @@ import pandas as pd
 import nltk
 from nltk.tokenize import sent_tokenize
 
+nltk.download('punkt')
+
 def preprocessing(content):
     """
     Preprocesses the input text by:
