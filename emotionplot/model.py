@@ -40,6 +40,7 @@ def predict_emotions(df, text_column="chunk", top_k=3, batch_size=32, model_type
         pd.DataFrame: DataFrame with predicted emotions.
     """
     if model_type not in models:
+        raise KeyError(f"Invalid model_type: {model_type}. Choose from: {list(models.keys())}")
 
     model = models[model_type]
     tokenizer = tokenizers[model_type]
