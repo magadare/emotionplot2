@@ -23,6 +23,18 @@ app.add_middleware(
 #http://127.0.0.1:8000/extract/?url=https%3A%2F%2Fwww.gutenberg.org%2Febooks%2F1661
 @app.get("/extract/")
 def extract_novel(url: str = Query(..., description="Project Gutenberg novel URL")):
+    """
+    Downloads and processes a novel from Project Gutenberg.
+
+    Args:
+        url (str): The URL to the Project Gutenberg novel. Provided as a query parameter.
+
+    Raises:
+        HTTPException: If there is an error downloading or processing the text.
+
+    Returns:
+        dict: A dictionary with a success status and a short preview of the cleaned text.
+    """
     try:
         raw_text = get_novel(url)
         clean_text = clean_gutenberg_text(raw_text)
@@ -36,6 +48,20 @@ def chunk_text(
     text: str = Query(..., description="Raw novel text"),
     num_chunks: int = Query(3, ge=1, le=7, description="Number of chunks (1–7)")
 ):
+    """
+    Splits the provided text into a specified number of chunks based on sentences.
+
+    Args:
+        text (str): The raw text to be chunked, provided as a query parameter.
+        num_chunks (int): The number of chunks to split the text into, must be between 1 and 7.
+
+    Raises:
+        HTTPException: If there is an error during preprocessing, sentence tokenization, or chunking.
+
+    Returns:
+        dict: A dictionary containing the number of chunks, sentences per chunk, and the list of chunks.
+    """
+
     try:
         preprocessed = preprocessing(text)
         sentences = sent_tokenize(preprocessed)
@@ -64,6 +90,18 @@ def extract_and_chunk(
     url: str = Query(..., description="Project Gutenberg novel URL"),
     sentences_per_chunk: int = Query(3, ge=1, le=7, description="Number of sentences per chunk (e.g. 3)")
 ):
+    """    Extracts a novel from Project Gutenberg, cleans it, and splits it into chunks.
+
+    Args:
+        url (str): The URL to the Project Gutenberg novel.
+        sentences_per_chunk (int): Number of sentences per chunk, must be between 1 and 7.
+
+    Raises:
+        HTTPException: If there is an error during the extraction, cleaning, or chunking process.
+
+    Returns:
+        dict: A dictionary containing the status, book URL, total sentences, sentences per chunk, number of chunks, and the list of chunks.
+    """
     try:
         # Step 1: Fetch and clean text
         raw_text = get_novel(url)
@@ -100,6 +138,16 @@ def full_emotion_pipeline(
     sentences_per_chunk: int = Query(3, ge=1, le=7),
     model: str = Query("fast", enum=["fast", "accurate"], description="Choose 'fast' or 'accurate' model")
 ):
+    """    Runs the full emotion analysis pipeline on a novel from Project Gutenberg.
+    Args:
+        url (str): The URL to the Project Gutenberg novel.
+        sentences_per_chunk (int): Number of sentences per chunk, must be between 1 and 7.
+        model (str): The model to use for emotion prediction, either 'fast' or 'accurate'.
+    Raises:
+        HTTPException: If there is an error during the pipeline execution.
+    Returns:
+        dict: A dictionary containing the status, model used, book URL, sentences per chunk, number of chunks, and the predicted emotions.
+    """
     try:
         print("Step 0: Check for cached results...")
         novel_id = generate_novel_id(url)

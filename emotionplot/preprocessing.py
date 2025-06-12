@@ -3,6 +3,17 @@ import nltk
 from nltk.tokenize import sent_tokenize
 
 def preprocessing(content):
+    """
+    Preprocesses the input text by:
+    1. Lowercasing the text.
+    2. Removing numbers.
+    3. Removing punctuation.
+    4. Tokenizing the text into words.
+    Args:
+        content (str): The input text to preprocess.
+    Returns:
+        str: The preprocessed text with words separated by spaces.
+    """
     # Lowercase
     content = content.lower()
 
