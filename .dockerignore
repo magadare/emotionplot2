@@ -34,3 +34,8 @@ venv/
 *.csv
 *.json
 outputs/
+rawdata/
+*.tsv
+*.egg
+*.pkl
+*.joblib
