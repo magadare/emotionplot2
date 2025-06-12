@@ -28,7 +28,7 @@ transformers          # HuggingFace Transformers
 # web scraping
 beautifulsoup4        # HTML parsing
 requests
-
+google-cloud-storage
 
 # Install the correct TensorFlow version
 # Uncomment if you use TensorFlow

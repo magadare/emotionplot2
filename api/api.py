@@ -2,6 +2,7 @@ from fastapi import FastAPI, Query, HTTPException
 from emotionplot.data import get_novel, clean_gutenberg_text
 from emotionplot.preprocessing import preprocessing, chunk_by_sentences
 from emotionplot.model import predict_emotions
+from emotionplot.gcs_utils import generate_novel_id, upload_to_gcs, download_from_gcs_if_exists
 from nltk.tokenize import sent_tokenize
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -100,8 +101,21 @@ def full_emotion_pipeline(
     model: str = Query("fast", enum=["fast", "accurate"], description="Choose 'fast' or 'accurate' model")
 ):
     try:
+        print("Step 0: Check for cached results...")
+        novel_id = generate_novel_id(url)
+        blob_name = f"emotion_results/{novel_id}_model={model}_spc={sentences_per_chunk}.json"
+        bucket_name = "emotionplot-results"
+
+        # Optional: return cached result
+        cached_result = download_from_gcs_if_exists(bucket_name, blob_name)
+        if cached_result:
+            print("Found cached result in GCS. Returning.")
+            return cached_result
+
+        # Step 1: Getting novel
         print("Step 1: Getting novel...")
         raw_text = get_novel(url)
+
         print("Step 2: Preprocessing...")
         clean_text = clean_gutenberg_text(raw_text)
         preprocessed = preprocessing(clean_text)
@@ -115,8 +129,7 @@ def full_emotion_pipeline(
         print("Step 4: Predicting emotions...")
         df_with_preds = predict_emotions(df_chunks, top_k=3, model_type=model)
 
-        print("Step 5: Returning results.")
-        return {
+        response_data = {
             "status": "success",
             "model_used": model,
             "book_url": url,
@@ -124,6 +137,12 @@ def full_emotion_pipeline(
             "num_chunks": len(df_with_preds),
             "emotions": df_with_preds[["chunk", "Predicted_Emotion", "Top_3_Emotions"]].to_dict(orient="records")
         }
+
+        print("Step 5: Saving result to GCS...")
+        upload_to_gcs(response_data, bucket_name, blob_name)
+
+        print("Done. Returning fresh result.")
+        return response_data
 
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

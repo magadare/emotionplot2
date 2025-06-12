@@ -25,7 +25,7 @@ for model in models.values():
 # Label maps (identical between the two)
 id2label = models["fast"].config.id2label
 
-def predict_emotions(df, text_column="chunk", top_k=3, batch_size=32, model_type="fast"):
+def predict_emotions(df, text_column="chunk", top_k=3, batch_size=32, model_type="accurate"):
     print(f"[predict_emotions] Using model: {model_type}")
 
     model = models[model_type]

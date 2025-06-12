@@ -42,6 +42,8 @@ models/
 .credentials
 secrets.toml
 *.json
+.gcp/*.json
+
 
 # User defined extras
 # Complete to your desire
