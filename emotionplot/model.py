@@ -28,6 +28,19 @@ id2label = models["fast"].config.id2label
 def predict_emotions(df, text_column="chunk", top_k=3, batch_size=32, model_type="accurate"):
     print(f"[predict_emotions] Using model: {model_type}")
 
+    """
+    Predict emotions in a DataFrame using a specified model.
+    Args:
+        df (pd.DataFrame): DataFrame containing text data.
+        text_column (str): Column name containing the text to analyze.
+        top_k (int): Number of top emotions to return.
+        batch_size (int): Batch size for processing.
+        model_type (str): Model type to use ("fast" or "accurate").
+    Returns:
+        pd.DataFrame: DataFrame with predicted emotions.
+    """
+    if model_type not in models:
+
     model = models[model_type]
     tokenizer = tokenizers[model_type]
 
