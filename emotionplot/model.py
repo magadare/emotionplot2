@@ -1,6 +1,9 @@
 
 import torch
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
+import nltk
+
+nltk.download('punkt')
 
 # Model names
 FAST_MODEL = "joeddav/distilbert-base-uncased-go-emotions-student"
