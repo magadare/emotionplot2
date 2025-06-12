@@ -36,6 +36,17 @@ def get_novel(url: str) -> str:
 
 
 def clean_gutenberg_text(raw_text: str) -> str:
+
+    """
+    Cleans the raw text from Project Gutenberg by removing headers, footers,
+    and other non-content elements, and normalizing whitespace.
+    Args:
+        raw_text (str): The raw text from Project Gutenberg.
+    Returns:
+        str: The cleaned text, ready for analysis.
+    """
+
+    # Ensure the input is a string
     # Remove BOM if present
     raw_text = raw_text.lstrip('\ufeff')
 
