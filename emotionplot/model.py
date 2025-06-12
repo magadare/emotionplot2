@@ -1,6 +1,9 @@
 
 import torch
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
+import nltk
+
+nltk.download('punkt')
 
 # Load GoEmotions tokenizer and model
 tokenizer = AutoTokenizer.from_pretrained("SamLowe/roberta-base-go_emotions")

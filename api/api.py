@@ -2,9 +2,15 @@ from fastapi import FastAPI, Query, HTTPException
 from emotionplot.data import get_novel, clean_gutenberg_text
 from emotionplot.preprocessing import preprocessing, chunk_by_sentences
 from nltk.tokenize import sent_tokenize
+import nltk
 
+nltk.download('punkt')
 
 app = FastAPI()
+
+@app.get("/")
+def root():
+    return {"response" : "This is a working emotionplot API"}
 
 #http://127.0.0.1:8000/extract/?url=https%3A%2F%2Fwww.gutenberg.org%2Febooks%2F1661
 @app.get("/extract/")
@@ -13,7 +19,7 @@ def extract_novel(url: str = Query(..., description="Project Gutenberg novel URL
         raw_text = get_novel(url)
         clean_text = clean_gutenberg_text(raw_text)
         return {"status": "success", "text": clean_text[:1000] + "..."}  # Return a preview
-    except Exception as e:
+    except Exception as e:/Users/hatem/code/mhatem090/07-ML-Ops/04-Predict-in-production/data-fast-api/.env.sample
         raise HTTPException(status_code=400, detail=str(e))
 
 
