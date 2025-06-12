@@ -21,10 +21,7 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://127.0.0.1:8000",
-        "http://localhost:8000"
-    ],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -51,7 +48,7 @@ def extract_novel(url: str = Query(..., description="Project Gutenberg novel URL
         raw_text = get_novel(url)
         clean_text = clean_gutenberg_text(raw_text)
         return {"status": "success", "text": clean_text[:1000] + "..."}  # Return a preview
-    except Exception as e:/Users/hatem/code/mhatem090/07-ML-Ops/04-Predict-in-production/data-fast-api/.env.sample
+    except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 

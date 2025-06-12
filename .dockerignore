@@ -1,0 +1,36 @@
+# Byte-compiled / cache
+__pycache__/
+*.py[cod]
+*.so
+*.pyo
+
+# Jupyter Notebooks
+*.ipynb
+.ipynb_checkpoints/
+
+# Environment files
+.env
+*.env
+
+# GCP credentials (already mounted at runtime)
+.gcp/
+
+# Git
+.git
+.gitignore
+
+# Virtual environments
+venv/
+.env/
+.envrc
+*.egg-info/
+
+# System
+.DS_Store
+*.swp
+
+# Logs and outputs
+*.log
+*.csv
+*.json
+outputs/
