@@ -136,7 +136,7 @@ def extract_and_chunk(
 def full_emotion_pipeline(
     url: str = Query(..., description="Project Gutenberg novel URL"),
     sentences_per_chunk: int = Query(3, ge=1, le=7),
-    model: str = Query("fast", enum=["fast", "accurate"], description="Choose 'fast' or 'accurate' model")
+    model: str = Query("accurate", enum=["fast", "accurate"], description="Choose 'fast' or 'accurate' model")
 ):
     """    Runs the full emotion analysis pipeline on a novel from Project Gutenberg.
     Args:
