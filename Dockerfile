@@ -1,5 +1,7 @@
 FROM python:3.10.6-slim
 
+RUN apt-get update && apt-get install -y build-essential && apt-get clean
+
 COPY minimal_requirements.txt minimal_requirements.txt
 RUN pip install --no-cache-dir -r minimal_requirements.txt
 
