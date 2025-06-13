@@ -2,12 +2,6 @@ import json
 from hashlib import md5
 from google.cloud import storage
 
-import google.auth
-
-# DEBUG: Print out which credentials are being used
-creds, project = google.auth.default()
-print(f"[DEBUG] Auth project: {project}, Credentials: {type(creds)}")
-
 
 BUCKET_NAME = "emotionplot-results"
 
