@@ -2,6 +2,13 @@ import json
 from hashlib import md5
 from google.cloud import storage
 
+import google.auth
+
+# DEBUG: Print out which credentials are being used
+creds, project = google.auth.default()
+print(f"[DEBUG] Auth project: {project}, Credentials: {type(creds)}")
+
+
 BUCKET_NAME = "emotionplot-results"
 
 def generate_novel_id(url: str) -> str:
@@ -24,7 +31,7 @@ def upload_to_gcs(data: dict, bucket_name: str, blob_name: str):
     if not isinstance(data, dict):
         raise TypeError("`data` must be a dictionary")
 
-    client = storage.Client(project="static-hangout-457110-u5")
+    client = storage.Client()
     bucket = client.bucket(bucket_name)
     blob = bucket.blob(blob_name)
     blob.upload_from_string(json.dumps(data), content_type="application/json")
@@ -40,7 +47,7 @@ def download_from_gcs_if_exists(bucket_name: str, blob_name: str):
     if not isinstance(bucket_name, str) or not isinstance(blob_name, str):
         raise TypeError("`bucket_name` and `blob_name` must be strings")
 
-    client = storage.Client(project="static-hangout-457110-u5")
+    client = storage.Client()
     bucket = client.bucket(bucket_name)
     blob = bucket.blob(blob_name)
     if blob.exists():

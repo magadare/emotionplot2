@@ -4,20 +4,13 @@ from emotionplot.preprocessing import preprocessing, chunk_by_sentences
 from emotionplot.model import predict_emotions
 from emotionplot.gcs_utils import generate_novel_id, upload_to_gcs, download_from_gcs_if_exists
 from nltk.tokenize import sent_tokenize
-
-import nltk
-
-nltk.download('punkt')
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
 @app.get("/")
 def root():
     return {"response" : "This is a working emotionplot API"}
-
-from fastapi.middleware.cors import CORSMiddleware
-
-app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
