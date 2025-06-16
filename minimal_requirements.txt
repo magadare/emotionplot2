@@ -22,8 +22,9 @@ pytest
 nltk
 
 # deep learning
-torch                 # PyTorch for deep learning
-transformers   # HuggingFace Transformers
+torch==2.2.2+cpu -f https://download.pytorch.org/whl/torch_stable.html
+
+transformers==4.40.1   # HuggingFace Transformers
 scikit-learn>=1.0,<2.0
 
 
