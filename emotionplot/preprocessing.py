@@ -1,6 +1,7 @@
 import pandas as pd
 import nltk
 from nltk.tokenize import sent_tokenize
+import re
 
 nltk.download('punkt')
 
@@ -53,3 +54,24 @@ def chunk_by_sentences(content, sentences_per_chunk=3):
 # df = pd.DataFrame({'chunk': chunks})
 
 # df["cleaned_chunk"] = df["chunk"].apply(preprocessing)
+
+
+
+def latex_to_paragraph_dataframe(latex_text):
+    """
+    Parses LaTeX-formatted text, groups lines into paragraphs based on single \newline breaks,
+    and stores each paragraph in a DataFrame row.
+    :param latex_text: LaTeX-formatted string.
+    :return: Pandas DataFrame with paragraphs as rows.
+    """
+    # Remove LaTeX document structure
+    latex_text = re.sub(r"\\documentclass{.*?}|\\begin{document}|\\end{document}", "", latex_text, flags=re.DOTALL)
+    # Split text by isolated \newline (i.e., it appears on a line by itself)
+    raw_paragraphs = re.split(r"\s*\n\s*\\newline\s*\n\s*", latex_text.strip())
+    # Merge paragraph lines (inside each paragraph) into a single text block
+    paragraphs = [" ".join(re.split(r"\s*\\newline\s*", para)).strip() for para in raw_paragraphs]
+    # Remove remaining LaTeX commands and extra spaces
+    paragraphs = [re.sub(r"\\[a-zA-Z]+", "", para).strip() for para in paragraphs if para.strip()]
+    # Convert to DataFrame
+    df = pd.DataFrame({"Paragraph": paragraphs})
+    return df
