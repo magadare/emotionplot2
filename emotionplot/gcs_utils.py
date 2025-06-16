@@ -16,6 +16,10 @@ def generate_novel_id(url: str) -> str:
     """
     return md5(url.encode()).hexdigest()
 
+def generate_poem_id(text: str) -> str:
+    """Generates a unique ID for user-submitted text (e.g. poems)."""
+    return md5(text.encode("utf-8")).hexdigest()
+
 def upload_to_gcs(data: dict, bucket_name: str, blob_name: str):
     """Uploads a dictionary to Google Cloud Storage as a JSON file.
     Args:

@@ -1,12 +1,13 @@
 from fastapi import FastAPI, Query, HTTPException
 from emotionplot.data import get_novel, clean_gutenberg_text
-from emotionplot.preprocessing import preprocessing, chunk_by_sentences
+from emotionplot.preprocessing import preprocessing, chunk_by_sentences, lines_to_dataframe, raw_text_to_chunks
 from emotionplot.model import predict_emotions
-from emotionplot.gcs_utils import generate_novel_id, upload_to_gcs, download_from_gcs_if_exists, load_all_profiles, compute_emotion_profile
+from emotionplot.gcs_utils import generate_novel_id, upload_to_gcs, download_from_gcs_if_exists, load_all_profiles, compute_emotion_profile, generate_poem_id
 from nltk.tokenize import sent_tokenize
 from fastapi.middleware.cors import CORSMiddleware
 from emotionplot.recommendation import recommend_similar_books, RecommendationRequest
 import pandas as pd
+import json
 
 
 from sklearn.metrics.pairwise import cosine_similarity
@@ -238,4 +239,36 @@ def recommend_books(request: RecommendationRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+class AnalyzePoemRequest(BaseModel):
+    text: str
 
+@app.post("/analyze_poem")
+def analyze_poem(request: AnalyzePoemRequest):
+    try:
+        raw_text = request.text.strip()
+        print(f"[analyze_poem] Received text:\n{raw_text}")
+        content_hash = generate_poem_id(raw_text)
+        gcs_filename = f"text_{content_hash}.json"
+
+        # 1. Try to load from GCS
+        try:
+            cached = download_from_gcs_if_exists("emotionplot-results", gcs_filename)
+            return cached
+        except FileNotFoundError:
+            pass
+
+        # 2. Chunk and predict
+        df = lines_to_dataframe(raw_text)
+        print(f"[analyze_poem] DataFrame:\n{df.head()}")
+        result_df = predict_emotions(df, model_type="accurate")
+        print(f"[analyze_poem] Predictions: {result[:3]}")
+
+        # 3. Save and return
+        result = result_df.to_dict(orient="records")
+        upload_to_gcs("emotionplot-results", gcs_filename, json.dumps(result))
+        print("[analyze_poem] Returning predictions:")
+        print(result)
+        return {"emotions": result}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error processing poem: {str(e)}")

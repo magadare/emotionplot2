@@ -75,3 +75,13 @@ def latex_to_paragraph_dataframe(latex_text):
     # Convert to DataFrame
     df = pd.DataFrame({"Paragraph": paragraphs})
     return df
+
+
+def raw_text_to_chunks(text: str) -> pd.DataFrame:
+    """Splits raw poem text by line breaks into a DataFrame of chunks."""
+    lines = [line.strip() for line in text.strip().split("\n") if line.strip()]
+    return pd.DataFrame({"chunk": lines})
+
+def lines_to_dataframe(text: str) -> pd.DataFrame:
+    lines = [line.strip() for line in text.strip().split("\n") if line.strip()]
+    return pd.DataFrame({"chunk": lines})

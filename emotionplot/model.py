@@ -68,4 +68,3 @@ def predict_emotions(df, text_column="chunk", top_k=3, batch_size=32, model_type
 
     print("[predict_emotions] Prediction complete.")
     return df
-
