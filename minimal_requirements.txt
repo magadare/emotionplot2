@@ -22,23 +22,13 @@ pytest
 nltk
 
 # deep learning
-torch==2.2.2+cpu -f https://download.pytorch.org/whl/torch_stable.html
+torch==2.2.2+cpu
+--extra-index-url https://download.pytorch.org/whl/cpu
 
 transformers==4.40.1   # HuggingFace Transformers
 scikit-learn>=1.0,<2.0
-
-
 
 # web scraping
 beautifulsoup4        # HTML parsing
 requests
 google-cloud-storage
-
-# Install the correct TensorFlow version
-# Uncomment if you use TensorFlow
-# tensorflow==2.16.2    # For both Intel and Apple silicon
-# keras==3.8.0
-
-# Google Cloud
-# Uncomment if you use Google Cloud Storage
-# google-cloud-storage
