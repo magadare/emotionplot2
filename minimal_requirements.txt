@@ -1,11 +1,11 @@
+
 # data science
 numpy<2.0.0
 pandas==2.2.3
-# scikit-learn==1.6.1 # Uncomment if you use sklearn
 
 # API
 fastapi
-uvicorn
+uvicorn[standard]
 
 # plotting
 matplotlib
@@ -22,13 +22,11 @@ pytest
 nltk
 
 # deep learning
-torch==2.2.2+cpu
---extra-index-url https://download.pytorch.org/whl/cpu
-
-transformers==4.40.1   # HuggingFace Transformers
+torch==2.2.2
+transformers==4.40.1
 scikit-learn>=1.0,<2.0
 
 # web scraping
-beautifulsoup4        # HTML parsing
+beautifulsoup4
 requests
 google-cloud-storage
