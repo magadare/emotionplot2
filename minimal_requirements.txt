@@ -23,7 +23,10 @@ nltk
 
 # deep learning
 torch                 # PyTorch for deep learning
-transformers          # HuggingFace Transformers
+transformers   # HuggingFace Transformers
+scikit-learn>=1.0,<2.0
+
+
 
 # web scraping
 beautifulsoup4        # HTML parsing

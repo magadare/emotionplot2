@@ -1,6 +1,7 @@
 import json
 from hashlib import md5
 from google.cloud import storage
+from collections import defaultdict
 
 
 BUCKET_NAME = "emotionplot-results"
@@ -48,3 +49,41 @@ def download_from_gcs_if_exists(bucket_name: str, blob_name: str):
         content = blob.download_as_text()
         return json.loads(content)
     return None
+
+
+
+def compute_emotion_profile(emotions_list):
+    emotion_totals = defaultdict(float)
+    total_chunks = len(emotions_list)
+
+    for entry in emotions_list:
+        top_3 = entry.get("Top_3_Emotions", {})
+        for emotion, score in top_3.items():
+            emotion_totals[emotion] += score
+
+    for emotion in emotion_totals:
+        emotion_totals[emotion] /= total_chunks
+
+    return dict(emotion_totals)
+
+
+
+
+def load_all_profiles(bucket_name):
+    client = storage.Client()
+    bucket = client.bucket(bucket_name)
+    emotion_profiles = {}
+    url_lookup = {}
+
+    for blob in bucket.list_blobs():
+        if blob.name.endswith(".json"):
+            content = blob.download_as_string()
+            data = json.loads(content)
+
+            profile = compute_emotion_profile(data["emotions"])
+            emotion_profiles[blob.name] = profile
+
+            # ✅ Save the book URL for later use
+            url_lookup[blob.name] = data.get("book_url", "Unknown")
+
+    return emotion_profiles, url_lookup
