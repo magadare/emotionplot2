@@ -1,23 +1,24 @@
 
-import torch
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
+import torch
+import os
 import nltk
 
 nltk.download('punkt')
 
-# Model names
-FAST_MODEL = "joeddav/distilbert-base-uncased-go-emotions-student"
-ACCURATE_MODEL = "SamLowe/roberta-base-go_emotions"
+# Local paths
+FAST_MODEL_PATH = "models/fast"
+ACCURATE_MODEL_PATH = "models/accurate"
 
-# Load both tokenizers and models
+# Load both tokenizers and models from local directory
 tokenizers = {
-    "fast": AutoTokenizer.from_pretrained(FAST_MODEL),
-    "accurate": AutoTokenizer.from_pretrained(ACCURATE_MODEL)
+    "fast": AutoTokenizer.from_pretrained(FAST_MODEL_PATH),
+    "accurate": AutoTokenizer.from_pretrained(ACCURATE_MODEL_PATH)
 }
 
 models = {
-    "fast": AutoModelForSequenceClassification.from_pretrained(FAST_MODEL),
-    "accurate": AutoModelForSequenceClassification.from_pretrained(ACCURATE_MODEL)
+    "fast": AutoModelForSequenceClassification.from_pretrained(FAST_MODEL_PATH),
+    "accurate": AutoModelForSequenceClassification.from_pretrained(ACCURATE_MODEL_PATH)
 }
 
 # Move models to device

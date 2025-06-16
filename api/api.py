@@ -2,11 +2,20 @@ from fastapi import FastAPI, Query, HTTPException
 from emotionplot.data import get_novel, clean_gutenberg_text
 from emotionplot.preprocessing import preprocessing, chunk_by_sentences
 from emotionplot.model import predict_emotions
-from emotionplot.gcs_utils import generate_novel_id, upload_to_gcs, download_from_gcs_if_exists
+from emotionplot.gcs_utils import generate_novel_id, upload_to_gcs, download_from_gcs_if_exists, load_all_profiles, compute_emotion_profile
 from nltk.tokenize import sent_tokenize
 from fastapi.middleware.cors import CORSMiddleware
+from emotionplot.recommendation import recommend_similar_books, RecommendationRequest
+import pandas as pd
+
+
+from sklearn.metrics.pairwise import cosine_similarity
+from pydantic import BaseModel
+from typing import List, Dict
+
 
 app = FastAPI()
+
 
 @app.get("/")
 def root():
@@ -196,3 +205,35 @@ def full_emotion_pipeline(
 
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.post("/recommend")
+def recommend_books(request: RecommendationRequest):
+    try:
+        emotions_as_dicts = [entry.dict() for entry in request.emotions]
+
+        new_profile = compute_emotion_profile(emotions_as_dicts)
+        emotion_profiles, url_lookup = load_all_profiles("emotionplot-results")
+
+        df = pd.DataFrame(emotion_profiles).fillna(0).T
+        new_vector = pd.Series(new_profile).reindex(df.columns).fillna(0).values.reshape(1, -1)
+        similarities = cosine_similarity(df.values, new_vector).flatten()
+
+        recommendations_df = pd.DataFrame({
+            "book": df.index,
+            "similarity": similarities
+        })
+
+        # Merge similarity scores with URLs
+        results = []
+        for _, row in recommendations_df.sort_values(by="similarity", ascending=False).head(request.top_k).iterrows():
+            results.append({
+                "book": row["book"],
+                "similarity": row["similarity"],
+                "url": url_lookup.get(row["book"], "Unknown")
+            })
+
+        return results
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
