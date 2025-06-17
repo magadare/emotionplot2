@@ -105,13 +105,13 @@ def compute_emotion_profile(emotions_data):
 
 
 
-def load_all_profiles(bucket_name):
+def load_all_profiles(bucket_name, prefix="emotion_results/books/"):
     client = storage.Client()
     bucket = client.bucket(bucket_name)
     emotion_profiles = {}
     url_lookup = {}
 
-    for blob in bucket.list_blobs():
+    for blob in bucket.list_blobs(prefix=prefix):
         if blob.name.endswith(".json"):
             content = blob.download_as_string()
             data = json.loads(content)
