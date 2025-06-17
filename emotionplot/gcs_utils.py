@@ -18,7 +18,7 @@ def generate_novel_id(url: str) -> str:
 
 def generate_poem_id(text: str) -> str:
     """Generates a unique ID for user-submitted text (e.g. poems)."""
-    return md5(text.encode("utf-8")).hexdigest()
+    return md5(text.encode("utf-8")).hexdigest()[:16]
 
 def upload_to_gcs(data: dict, bucket_name: str, blob_name: str):
     """Uploads a dictionary to Google Cloud Storage as a JSON file.
@@ -56,19 +56,51 @@ def download_from_gcs_if_exists(bucket_name: str, blob_name: str):
 
 
 
-def compute_emotion_profile(emotions_list):
-    emotion_totals = defaultdict(float)
-    total_chunks = len(emotions_list)
+def compute_emotion_profile(emotions_data):
+    """
+    Compute emotion profile from emotions data.
+    Handles both old format (list) and new format (dict) for Top_3_Emotions.
+    """
+    emotion_counts = defaultdict(float)
+    total_chunks = len(emotions_data)
 
-    for entry in emotions_list:
-        top_3 = entry.get("Top_3_Emotions", {})
-        for emotion, score in top_3.items():
-            emotion_totals[emotion] += score
+    for emotion_entry in emotions_data:
+        top_3 = emotion_entry.get("Top_3_Emotions", {})
 
-    for emotion in emotion_totals:
-        emotion_totals[emotion] /= total_chunks
+        # Handle both old format (list) and new format (dict)
+        if isinstance(top_3, list):
+            # Old format: convert list to dict with equal weights
+            # Assume the list contains emotion names in order of preference
+            for i, emotion in enumerate(top_3[:3]):  # Take max 3 emotions
+                if isinstance(emotion, str):
+                    # Give higher weight to first emotions in the list
+                    weight = 1.0 / (i + 1)  # 1.0, 0.5, 0.33
+                    emotion_counts[emotion] += weight
+                elif isinstance(emotion, dict) and 'emotion' in emotion:
+                    # Handle case where list contains emotion dicts
+                    weight = emotion.get('score', 1.0 / (i + 1))
+                    emotion_counts[emotion['emotion']] += weight
+        elif isinstance(top_3, dict):
+            # New format: dictionary with emotion -> score mapping
+            for emotion, score in top_3.items():
+                if isinstance(score, (int, float)):
+                    emotion_counts[emotion] += score
+                else:
+                    # Fallback: treat as binary presence
+                    emotion_counts[emotion] += 1.0
+        else:
+            # Fallback: use primary emotion if available
+            primary_emotion = emotion_entry.get("Predicted_Emotion")
+            if primary_emotion:
+                emotion_counts[primary_emotion] += 1.0
 
-    return dict(emotion_totals)
+    # Normalize by total chunks
+    if total_chunks > 0:
+        emotion_profile = {emotion: count/total_chunks for emotion, count in emotion_counts.items()}
+    else:
+        emotion_profile = {}
+
+    return emotion_profile
 
 
 
