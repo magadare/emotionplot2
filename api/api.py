@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Query, HTTPException
 from emotionplot.data import get_novel, clean_gutenberg_text
-from emotionplot.preprocessing import preprocessing, chunk_by_sentences, lines_to_dataframe, raw_text_to_chunks
-from emotionplot.model import predict_emotions
+from emotionplot.preprocessing  import preprocessing, chunk_by_sentences, chunk_by_lines, create_line_chunks
+from emotionplot.model import predict_emotions, predict_emotions_poems
 from emotionplot.gcs_utils import generate_novel_id, upload_to_gcs, download_from_gcs_if_exists, load_all_profiles, compute_emotion_profile, generate_poem_id
 from nltk.tokenize import sent_tokenize
 from fastapi.middleware.cors import CORSMiddleware
@@ -239,36 +239,167 @@ def recommend_books(request: RecommendationRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+class EmotionItem(BaseModel):
+    chunk: str
+    Predicted_Emotion: str
+    Top_3_Emotions: dict
+
 class AnalyzePoemRequest(BaseModel):
     text: str
 
-@app.post("/analyze_poem")
-def analyze_poem(request: AnalyzePoemRequest):
+class AnalyzePoemResponse(BaseModel):
+    emotions: List[EmotionItem]
+
+@app.get("/analyze_poem/")
+def full_emotion_poem_pipeline(
+    poem_text: str = Query(..., description="Full text of the poem to analyze"),
+    lines_per_chunk: int = Query(1, ge=1, le=10, description="Number of lines per chunk"),
+    model: str = Query("accurate", enum=["fast", "accurate"], description="Choose 'fast' or 'accurate' model")
+):
+    """
+    Runs the full emotion analysis pipeline on a poem text.
+    Args:
+        poem_text (str): The full text of the poem to analyze.
+        lines_per_chunk (int): Number of lines per chunk, must be between 1 and 10.
+        model (str): The model to use for emotion prediction, either 'fast' or 'accurate'.
+    Raises:
+        HTTPException: If there is an error during the pipeline execution.
+    Returns:
+        dict: A dictionary containing the status, model used, lines per chunk, number of chunks, and the predicted emotions.
+    """
     try:
-        raw_text = request.text.strip()
-        print(f"[analyze_poem] Received text:\n{raw_text}")
-        content_hash = generate_poem_id(raw_text)
-        gcs_filename = f"text_{content_hash}.json"
+        print("Step 0: Check for cached results...")
+        # Generate a hash-based ID for the poem text to enable caching
+        poem_id = generate_poem_id(poem_text)
+        blob_name = f"emotion_results/{poem_id}_model={model}_lpc={lines_per_chunk}.json"
+        bucket_name = "emotionplot-results"
 
-        # 1. Try to load from GCS
-        try:
-            cached = download_from_gcs_if_exists("emotionplot-results", gcs_filename)
-            return cached
-        except FileNotFoundError:
-            pass
+        # Optional: return cached result
+        cached_result = download_from_gcs_if_exists(bucket_name, blob_name)
+        if cached_result:
+            print("Found cached result in GCS. Returning.")
+            return cached_result
 
-        # 2. Chunk and predict
-        df = lines_to_dataframe(raw_text)
-        print(f"[analyze_poem] DataFrame:\n{df.head()}")
-        result_df = predict_emotions(df, model_type="accurate")
-        print(f"[analyze_poem] Predictions: {result[:3]}")
+        # Step 1: Getting poem lines
+        print("Step 1: Processing poem text...")
+        if not poem_text.strip():
+            raise ValueError("Poem text cannot be empty.")
 
-        # 3. Save and return
-        result = result_df.to_dict(orient="records")
-        upload_to_gcs("emotionplot-results", gcs_filename, json.dumps(result))
-        print("[analyze_poem] Returning predictions:")
-        print(result)
-        return {"emotions": result}
+        # Split poem into lines and filter out empty lines
+        lines = [line.strip() for line in poem_text.strip().split('\n') if line.strip()]
+        if not lines:
+            raise ValueError("No valid lines found in the poem.")
+
+        print("Step 2: Preprocessing...")
+        # Apply basic preprocessing to each line while preserving line structure
+        preprocessed_lines = [preprocessing(line) for line in lines if preprocessing(line).strip()]
+
+        if not preprocessed_lines:
+            raise ValueError("No valid content found after preprocessing.")
+
+        print("Step 3: Chunking by lines...")
+        df_chunks = chunk_by_lines(preprocessed_lines, lines_per_chunk)
+
+        print("Step 4: Predicting emotions...")
+        df_with_preds = predict_emotions(df_chunks, top_k=3, model_type=model)
+
+        response_data = {
+            "status": "success",
+            "model_used": model,
+            "total_lines": len(lines),
+            "lines_per_chunk": lines_per_chunk,
+            "num_chunks": len(df_with_preds),
+            "emotions": df_with_preds[["chunk", "Predicted_Emotion", "Top_3_Emotions"]].to_dict(orient="records")
+        }
+
+        print("Step 5: Saving result to GCS...")
+        upload_to_gcs(response_data, bucket_name, blob_name)
+
+        print("Done. Returning fresh result.")
+        return response_data
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error processing poem: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.get("/analyze_poemlines/")
+def full_emotion_poemlines_pipeline(
+    poem_text: str = Query(..., description="Full text of the poem to analyze"),
+    model: str = Query("accurate", enum=["fast", "accurate"], description="Choose 'fast' or 'accurate' model")
+):
+    """
+    Runs the full emotion analysis pipeline on a poem text, analyzing each line individually.
+    Args:
+        poem_text (str): The full text of the poem to analyze.
+        model (str): The model to use for emotion prediction, either 'fast' or 'accurate'.
+    Raises:
+        HTTPException: If there is an error during the pipeline execution.
+    Returns:
+        dict: A dictionary containing the status, model used, number of lines, and the predicted emotions for each line.
+    """
+    try:
+        print("Step 0: Check for cached results...")
+        # Generate a hash-based ID for the poem text to enable caching
+        poem_id = generate_poem_id(poem_text)
+        blob_name = f"emotion_results/{poem_id}_model={model}_line_by_line.json"
+        bucket_name = "emotionplot-results"
+
+        # Optional: return cached result
+        cached_result = download_from_gcs_if_exists(bucket_name, blob_name)
+        if cached_result:
+            print("Found cached result in GCS. Returning.")
+            return cached_result
+
+        # Step 1: Getting poem lines
+        print("Step 1: Processing poem text...")
+        print(f"DEBUG: Raw poem_text received: {repr(poem_text)}")
+
+        if not poem_text.strip():
+            raise ValueError("Poem text cannot be empty.")
+
+        # Split poem into lines and filter out empty lines
+        lines = [line.strip() for line in poem_text.strip().split('\n') if line.strip()]
+        print(f"DEBUG: Split into {len(lines)} lines:")
+        for i, line in enumerate(lines[:5]):  # Show first 5 lines
+            print(f"  Line {i+1}: '{line}'")
+        if len(lines) > 5:
+            print(f"  ... and {len(lines)-5} more lines")
+
+        if not lines:
+            raise ValueError("No valid lines found in the poem.")
+
+        print("Step 2: Preprocessing...")
+        # Apply basic preprocessing to each line while preserving line structure
+        preprocessed_lines = []
+        for i, line in enumerate(lines):
+            processed = preprocessing(line)
+            if processed.strip():
+                preprocessed_lines.append(processed)
+                if i < 3:  # Debug first 3 lines
+                    print(f"  Original: '{line}' -> Processed: '{processed}'")
+
+        print(f"DEBUG: After preprocessing: {len(preprocessed_lines)} lines remaining")
+        if not preprocessed_lines:
+            raise ValueError("No valid content found after preprocessing.")
+
+        print("Step 3: Creating individual line chunks...")
+        df_chunks = create_line_chunks(preprocessed_lines)
+
+        print("Step 4: Predicting emotions...")
+        df_with_preds = predict_emotions_poems(df_chunks, top_k=3, model_type=model)
+
+        response_data = {
+            "status": "success",
+            "model_used": model,
+            "total_lines": len(lines),
+            "num_lines_analyzed": len(df_with_preds),
+            "emotions": df_with_preds[["line_number", "line_text", "Predicted_Emotion", "Top_3_Emotions"]].to_dict(orient="records")
+        }
+
+        print("Step 5: Saving result to GCS...")
+        upload_to_gcs(response_data, bucket_name, blob_name)
+
+        print("Done. Returning fresh result.")
+        return response_data
+
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))

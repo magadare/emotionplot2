@@ -77,11 +77,45 @@ def latex_to_paragraph_dataframe(latex_text):
     return df
 
 
-def raw_text_to_chunks(text: str) -> pd.DataFrame:
-    """Splits raw poem text by line breaks into a DataFrame of chunks."""
-    lines = [line.strip() for line in text.strip().split("\n") if line.strip()]
-    return pd.DataFrame({"chunk": lines})
+def create_line_chunks(lines: list) -> pd.DataFrame:
+    """
+    Create individual chunks for each line of the poem.
+    Args:
+        lines (list): List of preprocessed poem lines
+    Returns:
+        pd.DataFrame: DataFrame with each line as a separate chunk
+    """
+    chunks = []
 
-def lines_to_dataframe(text: str) -> pd.DataFrame:
-    lines = [line.strip() for line in text.strip().split("\n") if line.strip()]
-    return pd.DataFrame({"chunk": lines})
+    for i, line in enumerate(lines):
+        if line.strip():  # Only process non-empty lines
+            chunks.append({
+                'chunk': line,  # Keep 'chunk' column name for compatibility with predict_emotions
+                'line_number': i + 1,
+                'line_text': line
+            })
+
+    return pd.DataFrame(chunks)
+
+def chunk_by_lines(lines: list, lines_per_chunk: int) -> pd.DataFrame:
+    """
+    Chunk poem lines into groups for emotion analysis.
+    Args:
+        lines (list): List of poem lines
+        lines_per_chunk (int): Number of lines per chunk
+    Returns:
+        pd.DataFrame: DataFrame with chunks
+    """
+    chunks = []
+
+    for i in range(0, len(lines), lines_per_chunk):
+        chunk_lines = lines[i:i + lines_per_chunk]
+        chunk_text = ' '.join(chunk_lines)  # Join lines with space for analysis
+        chunks.append({
+            'chunk_id': i // lines_per_chunk,
+            'chunk': chunk_text,
+            'line_numbers': f"{i+1}-{min(i+lines_per_chunk, len(lines))}",
+            'original_lines': chunk_lines
+        })
+
+    return pd.DataFrame(chunks)
