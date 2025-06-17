@@ -163,7 +163,7 @@ def full_emotion_pipeline(
     try:
         print("Step 0: Check for cached results...")
         novel_id = generate_novel_id(url)
-        blob_name = f"emotion_results/{novel_id}_model={model}_spc={sentences_per_chunk}.json"
+        blob_name = f"emotion_results/books/{novel_id}_model={model}_spc={sentences_per_chunk}.json"
         bucket_name = "emotionplot-results"
 
         # Optional: return cached result
@@ -214,7 +214,7 @@ def recommend_books(request: RecommendationRequest):
         emotions_as_dicts = [entry.dict() for entry in request.emotions]
 
         new_profile = compute_emotion_profile(emotions_as_dicts)
-        emotion_profiles, url_lookup = load_all_profiles("emotionplot-results")
+        emotion_profiles, url_lookup = load_all_profiles("emotionplot-results", prefix="emotion_results/books/")
 
         df = pd.DataFrame(emotion_profiles).fillna(0).T
         new_vector = pd.Series(new_profile).reindex(df.columns).fillna(0).values.reshape(1, -1)
@@ -271,7 +271,7 @@ def full_emotion_poem_pipeline(
         print("Step 0: Check for cached results...")
         # Generate a hash-based ID for the poem text to enable caching
         poem_id = generate_poem_id(poem_text)
-        blob_name = f"emotion_results/{poem_id}_model={model}_lpc={lines_per_chunk}.json"
+        blob_name = f"emotion_results/poems/{poem_id}_model={model}_lpc={lines_per_chunk}.json"
         bucket_name = "emotionplot-results"
 
         # Optional: return cached result
@@ -321,6 +321,7 @@ def full_emotion_poem_pipeline(
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+
 @app.get("/analyze_poemlines/")
 def full_emotion_poemlines_pipeline(
     poem_text: str = Query(..., description="Full text of the poem to analyze"),
@@ -340,7 +341,7 @@ def full_emotion_poemlines_pipeline(
         print("Step 0: Check for cached results...")
         # Generate a hash-based ID for the poem text to enable caching
         poem_id = generate_poem_id(poem_text)
-        blob_name = f"emotion_results/{poem_id}_model={model}_line_by_line.json"
+        blob_name = f"emotion_results/poems/{poem_id}_model={model}_line_by_line.json"
         bucket_name = "emotionplot-results"
 
         # Optional: return cached result

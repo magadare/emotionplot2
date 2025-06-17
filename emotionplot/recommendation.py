@@ -1,7 +1,7 @@
 from sklearn.metrics.pairwise import cosine_similarity
 import pandas as pd
 from emotionplot.gcs_utils import load_all_profiles
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List, Dict, Any
 
 class EmotionEntry(BaseModel):
@@ -11,13 +11,17 @@ class EmotionEntry(BaseModel):
 
 class RecommendationRequest(BaseModel):
     emotions: List[EmotionEntry]
-    top_k: int = 3
-
+    top_k: int = Field(
+        10,
+        ge=1,
+        le=20,
+        description="Number of similar books to return (1-20)"
+        )
 
 all_profiles = load_all_profiles("emotionplot-results")
 
 
-def recommend_similar_books(new_profile, all_profiles, top_k=5):
+def recommend_similar_books(new_profile, all_profiles, top_k=20):
     df = pd.DataFrame(all_profiles).fillna(0).T
     new_vector = pd.Series(new_profile).reindex(df.columns).fillna(0).values.reshape(1, -1)
     similarity_scores = cosine_similarity(df.values, new_vector).flatten()
